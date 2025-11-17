@@ -1,4 +1,4 @@
-# CSE Note Finder - Engineering Study Platform
+# CSE Note Finder - Engineering Study Platform..
 
 ## Project Overview
 A comprehensive dark-themed study platform for engineering students to access AI-generated study notes, practice quizzes, and FAQs based on their selected branch, year, and subject.
