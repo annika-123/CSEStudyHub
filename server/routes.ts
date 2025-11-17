@@ -8,19 +8,19 @@ import { z } from "zod";
 const generateNotesRequestSchema = z.object({
   subject: z.string(),
   code: z.string(),
-  uid: z.string().optional(),
+  uid: z.string().min(1, "UID is required"),
 });
 
 const generateQuizRequestSchema = z.object({
   subject: z.string(),
   code: z.string(),
-  uid: z.string().optional(),
+  uid: z.string().min(1, "UID is required"),
 });
 
 const generateFAQRequestSchema = z.object({
   subject: z.string(),
   code: z.string(),
-  uid: z.string().optional(),
+  uid: z.string().min(1, "UID is required"),
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -31,7 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { content, topics } = await generateStudyNotes(subject, code);
       
       const notes = await storage.createNotes({
-        sessionId: uid || "default",
+        sessionId: uid,
         subject: code,
         content,
         topics,
@@ -39,6 +39,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(notes);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
       console.error("Error generating notes:", error);
       res.status(500).json({ error: "Failed to generate notes" });
     }
@@ -47,7 +50,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/notes/:code", async (req, res) => {
     try {
       const { code } = req.params;
-      const notes = await storage.getNotesBySubject(code);
+      const uid = req.query.uid as string;
+      
+      if (!uid) {
+        return res.status(400).json({ error: "UID is required" });
+      }
+      
+      const notes = await storage.getNotesBySessionAndSubject(uid, code);
       
       if (!notes) {
         return res.status(404).json({ error: "Notes not found" });
@@ -67,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questions = await generateQuizQuestions(subject, code);
       
       const quiz = await storage.createQuiz({
-        sessionId: uid || "default",
+        sessionId: uid,
         subject: code,
         questions,
         score: null,
@@ -76,6 +85,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(quiz);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
       console.error("Error generating quiz:", error);
       res.status(500).json({ error: "Failed to generate quiz" });
     }
@@ -84,7 +96,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/quiz/questions/:code", async (req, res) => {
     try {
       const { code } = req.params;
-      const quiz = await storage.getQuizBySubject(code);
+      const uid = req.query.uid as string;
+      
+      if (!uid) {
+        return res.status(400).json({ error: "UID is required" });
+      }
+      
+      const quiz = await storage.getQuizBySessionAndSubject(uid, code);
       
       if (!quiz) {
         return res.status(404).json({ error: "Quiz not found" });
@@ -99,13 +117,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/faq/generate", async (req, res) => {
     try {
-      const { subject, code } = generateFAQRequestSchema.parse(req.body);
+      const { subject, code, uid } = generateFAQRequestSchema.parse(req.body);
       
       const faqData = await generateFAQs(subject, code);
       
       const faqs = [];
       for (const item of faqData) {
         const faq = await storage.createFAQ({
+          sessionId: uid,
           subject: code,
           question: item.question,
           answer: item.answer,
@@ -115,6 +134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(faqs);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
       console.error("Error generating FAQs:", error);
       res.status(500).json({ error: "Failed to generate FAQs" });
     }
@@ -123,7 +145,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/faq/:code", async (req, res) => {
     try {
       const { code } = req.params;
-      const faqs = await storage.getFAQsBySubject(code);
+      const uid = req.query.uid as string;
+      
+      if (!uid) {
+        return res.status(400).json({ error: "UID is required" });
+      }
+      
+      const faqs = await storage.getFAQsBySessionAndSubject(uid, code);
       
       res.json(faqs);
     } catch (error) {

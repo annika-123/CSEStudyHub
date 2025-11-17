@@ -16,6 +16,12 @@ export default function NotesViewer() {
   const { toast } = useToast();
 
   useEffect(() => {
+    const uid = localStorage.getItem("studentUID");
+    if (!uid) {
+      setLocation("/");
+      return;
+    }
+    
     const subjectData = localStorage.getItem("selectedSubject");
     if (!subjectData) {
       setLocation("/subject");
@@ -27,7 +33,11 @@ export default function NotesViewer() {
   const { data: notes, isLoading } = useQuery<GeneratedNotes>({
     queryKey: ["/api/notes", subject?.code],
     queryFn: async () => {
-      const response = await fetch(`/api/notes/${subject?.code}`);
+      const uid = localStorage.getItem("studentUID");
+      if (!uid) {
+        throw new Error("UID not found");
+      }
+      const response = await fetch(`/api/notes/${subject?.code}?uid=${encodeURIComponent(uid)}`);
       if (!response.ok) {
         if (response.status === 404) {
           return null;
@@ -42,7 +52,10 @@ export default function NotesViewer() {
   const generateNotesMutation = useMutation({
     mutationFn: async () => {
       if (!subject) return;
-      const uid = localStorage.getItem("studentUID") || "default";
+      const uid = localStorage.getItem("studentUID");
+      if (!uid) {
+        throw new Error("UID not found. Please restart from the beginning.");
+      }
       return await apiRequest("POST", "/api/notes/generate", {
         subject: subject.name,
         code: subject.code,

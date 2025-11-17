@@ -22,6 +22,12 @@ export default function Quiz() {
   const { toast } = useToast();
 
   useEffect(() => {
+    const uid = localStorage.getItem("studentUID");
+    if (!uid) {
+      setLocation("/");
+      return;
+    }
+    
     const subjectData = localStorage.getItem("selectedSubject");
     if (!subjectData) {
       setLocation("/subject");
@@ -33,7 +39,11 @@ export default function Quiz() {
   const { data: questions, isLoading } = useQuery<QuizQuestion[]>({
     queryKey: ["/api/quiz/questions", subject?.code],
     queryFn: async () => {
-      const response = await fetch(`/api/quiz/questions/${subject?.code}`);
+      const uid = localStorage.getItem("studentUID");
+      if (!uid) {
+        throw new Error("UID not found");
+      }
+      const response = await fetch(`/api/quiz/questions/${subject?.code}?uid=${encodeURIComponent(uid)}`);
       if (!response.ok) {
         if (response.status === 404) {
           return null;
@@ -48,7 +58,10 @@ export default function Quiz() {
   const generateQuizMutation = useMutation({
     mutationFn: async () => {
       if (!subject) return;
-      const uid = localStorage.getItem("studentUID") || "default";
+      const uid = localStorage.getItem("studentUID");
+      if (!uid) {
+        throw new Error("UID not found. Please restart from the beginning.");
+      }
       return await apiRequest("POST", "/api/quiz/generate", {
         subject: subject.name,
         code: subject.code,

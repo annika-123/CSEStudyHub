@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,13 @@ const branchIcons = {
 
 export default function BranchSelection() {
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const uid = localStorage.getItem("studentUID");
+    if (!uid) {
+      setLocation("/");
+    }
+  }, [setLocation]);
 
   const handleBranchSelect = (branchId: string) => {
     localStorage.setItem("selectedBranch", branchId);

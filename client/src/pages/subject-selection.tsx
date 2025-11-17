@@ -171,6 +171,12 @@ export default function SubjectSelection() {
   const [branchName, setBranchName] = useState("");
 
   useEffect(() => {
+    const uid = localStorage.getItem("studentUID");
+    if (!uid) {
+      setLocation("/");
+      return;
+    }
+
     const branch = localStorage.getItem("selectedBranch");
     const year = parseInt(localStorage.getItem("selectedYear") || "1");
 

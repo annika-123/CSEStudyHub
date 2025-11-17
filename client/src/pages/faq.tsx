@@ -23,6 +23,12 @@ export default function FAQPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    const uid = localStorage.getItem("studentUID");
+    if (!uid) {
+      setLocation("/");
+      return;
+    }
+    
     const subjectData = localStorage.getItem("selectedSubject");
     if (!subjectData) {
       setLocation("/subject");
@@ -34,7 +40,11 @@ export default function FAQPage() {
   const { data: faqs, isLoading } = useQuery<Faq[]>({
     queryKey: ["/api/faq", subject?.code],
     queryFn: async () => {
-      const response = await fetch(`/api/faq/${subject?.code}`);
+      const uid = localStorage.getItem("studentUID");
+      if (!uid) {
+        throw new Error("UID not found");
+      }
+      const response = await fetch(`/api/faq/${subject?.code}?uid=${encodeURIComponent(uid)}`);
       if (!response.ok) {
         throw new Error("Failed to fetch FAQs");
       }
@@ -46,7 +56,10 @@ export default function FAQPage() {
   const generateFAQsMutation = useMutation({
     mutationFn: async () => {
       if (!subject) return;
-      const uid = localStorage.getItem("studentUID") || "default";
+      const uid = localStorage.getItem("studentUID");
+      if (!uid) {
+        throw new Error("UID not found. Please restart from the beginning.");
+      }
       return await apiRequest("POST", "/api/faq/generate", {
         subject: subject.name,
         code: subject.code,

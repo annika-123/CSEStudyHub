@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,13 @@ const years: YearInfo[] = [
 
 export default function YearSelection() {
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const uid = localStorage.getItem("studentUID");
+    if (!uid) {
+      setLocation("/");
+    }
+  }, [setLocation]);
 
   const handleYearSelect = (year: number) => {
     localStorage.setItem("selectedYear", year.toString());
